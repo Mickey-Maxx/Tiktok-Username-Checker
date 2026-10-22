@@ -1,9 +1,5 @@
-- name: Build Executable with PyInstaller
-        run: |
-          pyinstaller --noconfirm --clean --onefile --windowed \
-            --name "${{ matrix.exe_name }}" \
-            --collect-all customtkinter \
-            YOUR_EXACT_FILE_NAME_HERE.py
+name: Build Cross-Platform Executables
+
 on:
   release:
     types: [published]
@@ -51,11 +47,11 @@ jobs:
             pip install pyinstaller requests customtkinter
   
         - name: Build Executable with PyInstaller
-          run: |
-            pyinstaller --noconfirm --clean --onefile --windowed \
-              --name "${{ matrix.exe_name }}" \
-              --collect-all customtkinter \
-              tiktok_username_checker_gui.py
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed \
+            --name "${{ matrix.exe_name }}" \
+            --collect-all customtkinter \
+            YOUR_EXACT_FILE_NAME_HERE.py
   
         - name: Organize Output Folder
           run: |
