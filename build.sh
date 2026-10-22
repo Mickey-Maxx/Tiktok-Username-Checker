@@ -18,12 +18,10 @@ jobs:
         include:
           - os: macos-latest
             asset_name: TikTokUserChecker-macOS.zip
-            exe_name: "TikTok Username Checker"
-            add_data_sep: ":"
+            exe_name: TikTokUsernameChecker
           - os: ubuntu-latest
             asset_name: TikTokUserChecker-Linux.zip
-            exe_name: "TikTokUsernameChecker"
-            add_data_sep: ":"
+            exe_name: TikTokUsernameChecker
 
     steps:
       - name: Checkout Repository
@@ -34,11 +32,13 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies (Linux)
+      - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y zip
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip libtk8.6 python3-tk
 
-      - name: Install Python requirements
+      - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller requests customtkinter
@@ -47,14 +47,20 @@ jobs:
         run: |
           pyinstaller --noconfirm --clean --onefile --windowed \
             --name "${{ matrix.exe_name }}" \
-            --hidden-import tiktok_username_checker \
             --collect-all customtkinter \
             tiktok_username_checker_gui.py
 
-      - name: Structure & Compress Artifacts
+      - name: Prepare Folder and Data Directory
         run: |
           mkdir -p dist/TikTokUserChecker/data
-          mv "dist/${{ matrix.exe_name }}" dist/TikTokUserChecker/ 2>/dev/null || mv "dist/${{ matrix.exe_name }}.app" dist/TikTokUserChecker/ 2>/dev/null || true
+          if [ -d "dist/${{ matrix.exe_name }}.app" ]; then
+            mv "dist/${{ matrix.exe_name }}.app" dist/TikTokUserChecker/
+          elif [ -f "dist/${{ matrix.exe_name }}" ]; then
+            mv "dist/${{ matrix.exe_name }}" dist/TikTokUserChecker/
+          fi
+
+      - name: Zip Package
+        run: |
           cd dist
           zip -r ../${{ matrix.asset_name }} TikTokUserChecker
 
