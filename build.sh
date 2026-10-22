@@ -1,57 +1,52 @@
-#!/usr/bin/env bash
-# ------------------------------------------------------------------
-# Builds and packages TikTok Username Checker for macOS / Linux.
-# ------------------------------------------------------------------
+name: Build Cross-Platform Executables
 
-set -e # Exit immediately if a command exits with a non-zero status
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
 
-echo "Cleaning old build artifacts..."
-rm -rf build dist
+permissions:
+  contents: write
 
-echo ""
-echo "Installing/updating build tools..."
-python3 -m pip install --upgrade pyinstaller requests customtkinter
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            asset_name: TikTokUserChecker-macOS.zip
+          - os: ubuntu-latest
+            asset_name: TikTokUserChecker-Linux.zip
 
-echo ""
-echo "Building the application..."
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-# Detect Operating System for proper path separators and extensions
-OS_NAME=$(uname -s)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-if [ "$OS_NAME" = "Darwin" ]; then
-    echo "Detected OS: macOS"
-    
-    # macOS PyInstaller build
-    python3 -m PyInstaller --noconfirm --clean --onefile --windowed \
-      --name "TikTok Username Checker" \
-      --icon "Assets/app_icon.png" \
-      --add-data "Assets/app_icon.png:." \
-      --hidden-import tiktok_username_checker \
-      --collect-all customtkinter \
-      tiktok_username_checker_gui.py
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zip
 
-    echo ""
-    echo "Organizing final distribution package for macOS..."
-    mkdir -p dist/TikTokUserChecker/data
-    mv "dist/TikTok Username Checker.app" dist/TikTokUserChecker/ 2>/dev/null || mv "dist/TikTok Username Checker" dist/TikTokUserChecker/
+      - name: Run Build Script
+        run: |
+          chmod +x build.sh
+          ./build.sh
 
-else
-    echo "Detected OS: Linux"
+      - name: Compress Build Output
+        run: |
+          cd dist
+          zip -r ../${{ matrix.asset_name }} TikTokUserChecker
 
-    # Linux PyInstaller build
-    python3 -m PyInstaller --noconfirm --clean --onefile --windowed \
-      --name "TikTokUsernameChecker" \
-      --icon "Assets/app_icon.png" \
-      --add-data "Assets/app_icon.png:." \
-      --hidden-import tiktok_username_checker \
-      --collect-all customtkinter \
-      tiktok_username_checker_gui.py
-
-    echo ""
-    echo "Organizing final distribution package for Linux..."
-    mkdir -p dist/TikTokUserChecker/data
-    mv dist/TikTokUsernameChecker dist/TikTokUserChecker/
-fi
-
-echo ""
-echo "Done! Your packaged folder is located at: dist/TikTokUserChecker"
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.asset_name }}
+          tag_name: v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
