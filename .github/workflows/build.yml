@@ -1,5 +1,9 @@
-name: Build Cross-Platform Executables
-
+- name: Build Executable with PyInstaller
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed \
+            --name "${{ matrix.exe_name }}" \
+            --collect-all customtkinter \
+            YOUR_EXACT_FILE_NAME_HERE.py
 on:
   release:
     types: [published]
