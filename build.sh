@@ -13,12 +13,17 @@ jobs:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos-latest
             asset_name: TikTokUserChecker-macOS.zip
+            exe_name: "TikTok Username Checker"
+            add_data_sep: ":"
           - os: ubuntu-latest
             asset_name: TikTokUserChecker-Linux.zip
+            exe_name: "TikTokUsernameChecker"
+            add_data_sep: ":"
 
     steps:
       - name: Checkout Repository
@@ -33,13 +38,23 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y zip
 
-      - name: Run Build Script
+      - name: Install Python requirements
         run: |
-          chmod +x build.sh
-          ./build.sh
+          python -m pip install --upgrade pip
+          pip install pyinstaller requests customtkinter
 
-      - name: Compress Build Output
+      - name: Build Executable with PyInstaller
         run: |
+          pyinstaller --noconfirm --clean --onefile --windowed \
+            --name "${{ matrix.exe_name }}" \
+            --hidden-import tiktok_username_checker \
+            --collect-all customtkinter \
+            tiktok_username_checker_gui.py
+
+      - name: Structure & Compress Artifacts
+        run: |
+          mkdir -p dist/TikTokUserChecker/data
+          mv "dist/${{ matrix.exe_name }}" dist/TikTokUserChecker/ 2>/dev/null || mv "dist/${{ matrix.exe_name }}.app" dist/TikTokUserChecker/ 2>/dev/null || true
           cd dist
           zip -r ../${{ matrix.asset_name }} TikTokUserChecker
 
