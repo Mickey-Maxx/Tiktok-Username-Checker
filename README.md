@@ -1,4 +1,4 @@
-# TikTok Username Checker 🎵
+# TikTok Username Checker 
 
 A lightweight, multi-threaded desktop GUI application designed to check TikTok username availability, organize results, and help you confirm available names directly in the TikTok app.
 
